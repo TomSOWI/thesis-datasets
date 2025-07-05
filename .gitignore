@@ -1,0 +1,5 @@
+# Ignore all the large parquet files
+*.parquet
+
+# Ignore all medium large csv files
+*.csv
