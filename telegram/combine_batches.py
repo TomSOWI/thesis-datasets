@@ -16,11 +16,16 @@ file_paths = [
 ]
 
 writer = None
-topic_mapping = pd.read_csv(f"{INPUT_PATH}/ch_to_topic_mapping.csv")
+#topic_mapping = pd.read_csv(f"{INPUT_PATH}/ch_to_topic_mapping.csv")
 
 for path in tqdm(file_paths):
     print(f"Reading {path}")
     df = pd.read_parquet(path)
+    #print(df.columns)
+    #print(topic_mapping.columns)
+    #df = pd.merge(df, topic_mapping, how="left", left_on="id", right_on="ch_ID")
+    #print(df.columns)
+    #break
     # Enhance batch with message_id for sentence-message mapping later
     df["message_id"] = [str(uuid.uuid4()) for _ in range(len(df))]
     table = pa.Table.from_pandas(df)
