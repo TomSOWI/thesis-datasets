@@ -24,7 +24,6 @@ def download_from_kaggle():
     os.environ["KAGGLE_USERNAME"] = creds["username"]
     os.environ["KAGGLE_KEY"] = creds["key"]
 
-    save_path = "/scratch/usr/nimtsspi/datasets/TG"
     # Set the path to the file you'd like to load
     file_paths = [
         "messages_11862.parquet",
@@ -40,11 +39,7 @@ def download_from_kaggle():
         df = kagglehub.load_dataset(
         KaggleDatasetAdapter.PANDAS,
         "tomrobinklotz/tg16-07-25",
-        file_path,
-        # Provide any additional arguments like 
-        # sql_query or pandas_kwargs. See the 
-        # documenation for more information:
-        # https://github.com/Kaggle/kagglehub/blob/main/README.md#kaggledatasetadapterpandas
+        file_path
         )
         dfs.append(df)
 
@@ -56,48 +51,35 @@ def download_from_kaggle():
     df["message_id"] = [str(uuid.uuid4()) for _ in range(len(df))]
     df.to_parquet(f"{OUTPUT_PATH}/TG_base.parquet")
 
+# def combine_batches():
 
-def combine_batches():
+#     file_paths = [
+#         "/scratch/usr/nimtsspi/datasets/TG/batches/messages_11862.parquet",
+#         "/scratch/usr/nimtsspi/datasets/TG/batches/messages_15816.parquet",
+#         "/scratch/usr/nimtsspi/datasets/TG/batches/messages_19770.parquet",
+#         "/scratch/usr/nimtsspi/datasets/TG/batches/messages_3954.parquet",
+#         "/scratch/usr/nimtsspi/datasets/TG/batches/messages_7908.parquet"
+#     ]
 
-    file_paths = [
-        "/scratch/usr/nimtsspi/datasets/TG/batches/messages_11862.parquet",
-        "/scratch/usr/nimtsspi/datasets/TG/batches/messages_15816.parquet",
-        "/scratch/usr/nimtsspi/datasets/TG/batches/messages_19770.parquet",
-        "/scratch/usr/nimtsspi/datasets/TG/batches/messages_3954.parquet",
-        "/scratch/usr/nimtsspi/datasets/TG/batches/messages_7908.parquet"
-    ]
+#     writer = None
+#     topic_mapping = pd.read_csv(f"{INPUT_PATH}/ch_to_topic_mapping.csv")
 
-    writer = None
-    topic_mapping = pd.read_csv(f"{INPUT_PATH}/ch_to_topic_mapping.csv")
+#     for path in tqdm(file_paths):
+#         print(f"Reading {path}")
+#         df = pd.read_parquet(path)
 
-    for path in tqdm(file_paths):
-        print(f"Reading {path}")
-        df = pd.read_parquet(path)
+#         # Enhance with topic information
+#         df = pd.merge(df, topic_mapping, how="left", left_on="channel_id", right_on="ch_ID")
+#         # Enhance with message_id 
+#         df["message_id"] = [str(uuid.uuid4()) for _ in range(len(df))]
 
-        # Enhance with topic information
-        df = pd.merge(df, topic_mapping, how="left", left_on="channel_id", right_on="ch_ID")
-        # Enhance with message_id 
-        df["message_id"] = [str(uuid.uuid4()) for _ in range(len(df))]
-
-        # Convert to PyArrow for efficient writing
-        table = pa.Table.from_pandas(df)
-        #if writer is None:
-        writer = pq.ParquetWriter(f"{OUTPUT_PATH}/TG_target.parquet", table.schema) #compression="snappy" --default
-        writer.write_table(table)
-        # free memory
-        del df, table  
-
-
-
-#if writer:
-    #writer.close()
-
-# path = f"{OUTPUT_PATH}/TG_target_new.parquet" #file_paths[0]
-# print(f"Reading {path}")
-# df = pd.read_parquet(path)
-# print(df.iloc[0]["message_id"])
-# df["message_id"] = [str(uuid.uuid4()) for _ in range(len(df))]
-# df.to_parquet(f"{OUTPUT_PATH}/TG_target_new.parquet")
+#         # Convert to PyArrow for efficient writing
+#         table = pa.Table.from_pandas(df)
+#         #if writer is None:
+#         writer = pq.ParquetWriter(f"{OUTPUT_PATH}/TG_target.parquet", table.schema) #compression="snappy" --default
+#         writer.write_table(table)
+#         # free memory
+#         del df, table  
 
 def main():
     download_from_kaggle()

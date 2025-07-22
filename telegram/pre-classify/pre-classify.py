@@ -9,6 +9,8 @@ from tqdm import tqdm
 import wandb
 import time
 
+INPUT_PATH = "/scratch/usr/nimtsspi/datasets/TG"
+OUTPUT_PATH = "/scratch/usr/nimtsspi/datasets/TG"
 
 os.environ["WANDB_MODE"] = "offline"
 wandb.init(project="tg-pre-classify")
@@ -128,7 +130,7 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # Classify TG
-    tg_data_path = "/scratch/usr/nimtsspi/datasets/tg-focused-topic-dataset-280len-limit"
+    tg_data_path = f"{INPUT_PATH}/TG_unified.parquet"
     tg_ds = load_from_disk(tg_data_path) 
     tg_df = tg_ds["train"].to_pandas()
     tg_messages = tg_df["message"].to_list()

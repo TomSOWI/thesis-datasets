@@ -3,3 +3,10 @@
 
 # Ignore all medium large csv files
 *.csv
+
+# Ignore cache
+__pycache__
+
+# Ignore folder wandb
+wandb/
+logs/
