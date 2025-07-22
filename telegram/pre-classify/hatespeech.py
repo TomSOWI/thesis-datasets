@@ -17,10 +17,10 @@ OUTPUT_PATH = "/scratch/usr/nimtsspi/datasets/TG/labels"
 
 os.environ["WANDB_MODE"] = "offline"
 wandb.init(
-    project="tg-pre-classify-sentiment",
+    project="tg-pre-classify-hate",
     config={
         "batch_size": 32,
-        "model": "twitter-roberta-base-sentiment-latest",
+        "model": "bert-base-uncased-hatexplain",
         "task": "single-label-classification",
         "dataset": "TG_unified.parquet",
         "max_length": 512
@@ -30,7 +30,7 @@ wandb.init(
 # Access the config
 config = wandb.config
 BATCH_SIZE = config.batch_size
-MODEL = config.model
+SENTI_MODEL = config.model
 MAX_LENGTH = config.max_length
 
 # Enable faster matmul using TF32 on A100
@@ -64,7 +64,6 @@ def single_label_classification(messages, model_id, device):
     #for i in tqdm(range(0, len(messages), BATCH_SIZE), desc="Hate Speech Classification"):
     for i in range(0, len(messages), BATCH_SIZE):
         batch_texts = messages[i:i + BATCH_SIZE]
-        #max_length = model.config.max_position_embeddings #new line !!!
         inputs = tokenizer(batch_texts, return_tensors="pt", padding=True, truncation=True, max_length=MAX_LENGTH).to(device)
 
         with torch.no_grad():
@@ -88,16 +87,16 @@ def main():
     
     # Classify
     start = time.time()
-    df["senti"] = single_label_classification(messages, model_id=MODEL,device=device)
+    df["hate"] = single_label_classification(messages, model_id=SENTI_MODEL,device=device)
     end = time.time()
 
     # Check
-    print("Values:", df.senti.unique())
+    print("Values:", df.hate.unique())
 
     # Save message_id + label
-    df = df[["message_id", "senti"]]
+    df = df[["message_id", "hate"]]
     print("Saving final results")
-    df.to_parquet(f"{OUTPUT_PATH}/TG_sentiment.parquet") 
+    df.to_parquet(f"{OUTPUT_PATH}/TG_hate.parquet") #!!!
 
     # Log Runtime 
     print("Runtime:", (end - start)//60)

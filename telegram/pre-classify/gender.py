@@ -8,20 +8,14 @@ from transformers import AutoTokenizer, AutoModelForSequenceClassification
 INPUT_PATH = "/scratch/usr/nimtsspi/datasets/TG"
 OUTPUT_PATH = "/scratch/usr/nimtsspi/datasets/TG/labels"
 
-#BATCH_SIZE = 32
-#GENDER_MODEL = "bias-type-classifier"
-#SENTI_MODEL = "twitter-roberta-base-sentiment-latest"
-#HATE_MODEL = "bert-base-uncased-hatexplain"
-#POLITIC_MODEL = "magpie-babe-ft-xlm"
-#LEXBIAS_MODEL = ""
 
 os.environ["WANDB_MODE"] = "offline"
 wandb.init(
-    project="tg-pre-classify-sentiment",
+    project="tg-pre-classify-gender",
     config={
         "batch_size": 32,
-        "model": "twitter-roberta-base-sentiment-latest",
-        "task": "single-label-classification",
+        "model": "bias-type-classifier",
+        "task": "multi-label-classification",
         "dataset": "TG_unified.parquet",
         "max_length": 512
     }
@@ -40,7 +34,6 @@ print("Available GPUs:", torch.cuda.device_count())
 print("GPU Name:", torch.cuda.get_device_name(torch.cuda.current_device()))
 
 
-
 def load_model(model_id):
     model_path = f"/scratch/usr/nimtsspi/models/{model_id}"
     tokenizer = AutoTokenizer.from_pretrained(model_path, local_files_only=True) 
@@ -48,35 +41,46 @@ def load_model(model_id):
     model = AutoModelForSequenceClassification.from_pretrained(model_path, local_files_only=True)
     return model, tokenizer
 
-def single_label_classification(messages, model_id, device):
+def multi_label_classification(messages, model_id, target_label, device):
     # Load tokenizer and model
     model, tokenizer = load_model(model_id)
     model = model.to(device)
     model.eval()
- 
+
     # id2label mapping
     print(model.config.id2label.values())
     id2label = model.config.id2label 
 
+    # Set threshold
+    threshold = 0.5  # you can adjust this based on precision/recall tradeoff
+  
+    # Store results
     predictions = []
-    #prediction_probs = []
-
-    #for i in tqdm(range(0, len(messages), BATCH_SIZE), desc="Hate Speech Classification"):
+ 
     for i in range(0, len(messages), BATCH_SIZE):
         batch_texts = messages[i:i + BATCH_SIZE]
-        #max_length = model.config.max_position_embeddings #new line !!!
-        inputs = tokenizer(batch_texts, return_tensors="pt", padding=True, truncation=True, max_length=MAX_LENGTH).to(device)
+        inputs = tokenizer(batch_texts, return_tensors="pt", padding=True, truncation=True).to(device)
 
         with torch.no_grad():
             logits = model(**inputs).logits
-            probs = torch.nn.functional.softmax(logits, dim=1)
 
-        #prediction_probs.extend(probs.cpu().tolist())
-        predicted_classes = torch.argmax(probs, dim=1).tolist()
-        predictions.extend([id2label[i] for i in predicted_classes])
 
+        probs = torch.sigmoid(logits)  # ← Multi-label uses sigmoid
+        #predictions_probs.extend(probs)
+
+        # Apply threshold
+        batch_preds = []
+        for row in probs:
+            label_idxs = (row > threshold).nonzero(as_tuple=True)[0].tolist()
+            labels = [id2label[i] for i in label_idxs]
+            batch_preds.append(labels)
+
+        predictions.extend(batch_preds)
+
+        # Convert Multi Label to single Label
     print(f"Predictions using {model_id} has finished")
-    return predictions
+    single_label_predictions = [target_label in prediction for prediction in predictions] 
+    return single_label_predictions
 
 
 def main():
@@ -88,16 +92,16 @@ def main():
     
     # Classify
     start = time.time()
-    df["senti"] = single_label_classification(messages, model_id=MODEL,device=device)
+    df["gender"] = multi_label_classification(messages, model_id=MODEL, target_label="gender",device=device)
     end = time.time()
 
     # Check
-    print("Values:", df.senti.unique())
+    print("Values:", df.gender.unique())
 
     # Save message_id + label
-    df = df[["message_id", "senti"]]
+    df = df[["message_id", "gender"]]
     print("Saving final results")
-    df.to_parquet(f"{OUTPUT_PATH}/TG_sentiment.parquet") 
+    df.to_parquet(f"{OUTPUT_PATH}/TG_gender.parquet") #!!!
 
     # Log Runtime 
     print("Runtime:", (end - start)//60)

@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=sentiment
+#SBATCH --job-name=gender
 #SBATCH --partition=gpu-a100
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=32
@@ -30,5 +30,8 @@ micromamba activate tk_ma
 # nvidia-smi
 
 # Run your script
-python sentiment.py
+python gender.py
+#python hatespeech.py
+#python lexbias.py
+#python sentiment.py
 

@@ -8,19 +8,12 @@ from transformers import AutoTokenizer, AutoModelForSequenceClassification
 INPUT_PATH = "/scratch/usr/nimtsspi/datasets/TG"
 OUTPUT_PATH = "/scratch/usr/nimtsspi/datasets/TG/labels"
 
-#BATCH_SIZE = 32
-#GENDER_MODEL = "bias-type-classifier"
-#SENTI_MODEL = "twitter-roberta-base-sentiment-latest"
-#HATE_MODEL = "bert-base-uncased-hatexplain"
-#POLITIC_MODEL = "magpie-babe-ft-xlm"
-#LEXBIAS_MODEL = ""
-
 os.environ["WANDB_MODE"] = "offline"
 wandb.init(
-    project="tg-pre-classify-sentiment",
+    project="tg-pre-classify-lexbias",
     config={
         "batch_size": 32,
-        "model": "twitter-roberta-base-sentiment-latest",
+        "model": "magpie-babe-ft-xlm",
         "task": "single-label-classification",
         "dataset": "TG_unified.parquet",
         "max_length": 512
@@ -59,12 +52,9 @@ def single_label_classification(messages, model_id, device):
     id2label = model.config.id2label 
 
     predictions = []
-    #prediction_probs = []
 
-    #for i in tqdm(range(0, len(messages), BATCH_SIZE), desc="Hate Speech Classification"):
     for i in range(0, len(messages), BATCH_SIZE):
         batch_texts = messages[i:i + BATCH_SIZE]
-        #max_length = model.config.max_position_embeddings #new line !!!
         inputs = tokenizer(batch_texts, return_tensors="pt", padding=True, truncation=True, max_length=MAX_LENGTH).to(device)
 
         with torch.no_grad():
@@ -88,16 +78,18 @@ def main():
     
     # Classify
     start = time.time()
-    df["senti"] = single_label_classification(messages, model_id=MODEL,device=device)
+    df["lexbias"] = single_label_classification(messages, model_id=MODEL,device=device)
     end = time.time()
 
     # Check
-    print("Values:", df.senti.unique())
+    print("Values:", df.lexbias.unique())
 
     # Save message_id + label
-    df = df[["message_id", "senti"]]
+    df = df[["message_id", "lexbias"]]
     print("Saving final results")
-    df.to_parquet(f"{OUTPUT_PATH}/TG_sentiment.parquet") 
+    df.to_parquet(f"{OUTPUT_PATH}/TG_lexbias.parquet") 
+
+   
 
     # Log Runtime 
     print("Runtime:", (end - start)//60)
