@@ -1,27 +1,66 @@
-# TGDataset creation
+# 📦 TGDataset Creation
 
-## How to download the data
-1. Clone this github repo: https://github.com/SystemsLab-Sapienza/TGDataset
-2. Do the following using this repo:
-- Download the dataset as json files from here: https://zenodo.org/records/7640712#.Y-9PjNLMKXI
-- Extract files in the folder public_db
-- Save all json files as documents in mongoDB using **db_utilities.py**
-3. Clone this repo: https://github.com/TomSOWI/thesis-datasets
-4. Store all messages from english-speaking channels as parquet using **write_mongodb_to_parquet.py**
-- If you can have enough memory on your device you can concate all batch files and **merge them with channel_topic_mappings.csv** and move one
-- Else you can:
-    - upload these files to kaggle 
-    - download these files on a remote-server
-    - concatenate these files and add topic labels using **combine-batches.py**
---> The base version of the dataset is stored under **datasets/TG/TG_base.parquet**
+## 📥 How to Download the Data
 
-## How to process the data
-1. Explore the character length distribution of messages --> **explore_character_len.py**
-2. Remove messages extending 280 characters --> **explore_character_len.py**
-3. Unify messages and remove duplicates -->**unify_messages.py**
-    - Evaluate unification using --> **unify_verify.py**
-4. Pre-Classify the dataset to get weak labels to obtain an overview of class distribution
-5. Save the current dataset to HF as TG-all-topics
-6. Filter messages from core topics and save dataset as TG-core-topics
+- **Clone the repository**  
+  https://github.com/TomSOWI/thesis-datasets
+
+- **Download the dataset**  
+  From Zenodo: https://zenodo.org/records/7640712
+
+- **Save the downloaded `.json` files**  
+  Place them under:  
+  `telegram/mongodb/public_db/`
+
+- **Upload the `.json` documents to MongoDB**  
+  Use:  
+  `mongodb/db_utilities.py`
+
+- **Store English messages as `.parquet`**  
+  Use:  
+  `mongodb/write_mongodb_to_parquet.py`
+
+- **Combine batches or upload to a remote server (if memory is an issue)**  
+  - Use: `combine_batches.py`  
+  - Appends topic labels from: `channel_topic_mappings.csv`
+
+- **Final dataset location**  
+  Saved under:  
+  `datasets/TG/TG_base.parquet`
+
+---
+
+## 🧹 How to Process the Data
+
+- **Explore message length distribution**  
+  → `explore_character_len.py`
+
+- **Filter out messages longer than 280 characters**  
+  → `explore_character_len.py`
+
+- **Unify and deduplicate messages**  
+  → `unify_messages.py`  
+  - Evaluate unification: `test/unify_verify.py`
+
+- **Pre-classify dataset to assign weak labels**  
+  → See `pre-classify/` folder
+
+- **Select and filter by topics**  
+  → `topic_filter.py`
+
+- **Save full dataset to Hugging Face Hub**  
+  → Name: `TG-all-topics`
+
+- **Filter for core topics only**  
+  → Save as: `TG-core-topics`
+
+
+### Running order
+1. combine_batches.py (internet required for kaggle)
+2. explore_character_len.py
+3. unify_messages.py
+4. topic_filter.py
+
+--> tg-preprocess.sbatch
 
 

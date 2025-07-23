@@ -30,16 +30,14 @@ def download_from_kaggle():
         "messages_15816.parquet",
         "messages_19770.parquet",
         "messages_3954.parquet",
-        "messages_7908.parquet"
+        "messages_7908.parquet",
     ]
     dfs = []
 
     for file_path in file_paths:
-    # Load the latest version
+        # Load the latest version
         df = kagglehub.load_dataset(
-        KaggleDatasetAdapter.PANDAS,
-        "tomrobinklotz/tg16-07-25",
-        file_path
+            KaggleDatasetAdapter.PANDAS, "tomrobinklotz/tg16-07-25", file_path
         )
         dfs.append(df)
 
@@ -47,9 +45,11 @@ def download_from_kaggle():
     topic_mapping = pd.read_csv(f"{INPUT_PATH}/ch_to_topic_mapping.csv")
     # Enhance with topic information
     df = pd.merge(df, topic_mapping, how="left", left_on="channel_id", right_on="ch_ID")
-    # Enhance with message_id 
+    df = df.drop("ch_ID", axis=1)
+    # Enhance with message_id
     df["message_id"] = [str(uuid.uuid4()) for _ in range(len(df))]
     df.to_parquet(f"{OUTPUT_PATH}/TG_base.parquet")
+
 
 # def combine_batches():
 
@@ -70,7 +70,7 @@ def download_from_kaggle():
 
 #         # Enhance with topic information
 #         df = pd.merge(df, topic_mapping, how="left", left_on="channel_id", right_on="ch_ID")
-#         # Enhance with message_id 
+#         # Enhance with message_id
 #         df["message_id"] = [str(uuid.uuid4()) for _ in range(len(df))]
 
 #         # Convert to PyArrow for efficient writing
@@ -79,7 +79,8 @@ def download_from_kaggle():
 #         writer = pq.ParquetWriter(f"{OUTPUT_PATH}/TG_target.parquet", table.schema) #compression="snappy" --default
 #         writer.write_table(table)
 #         # free memory
-#         del df, table  
+#         del df, table
+
 
 def main():
     download_from_kaggle()
