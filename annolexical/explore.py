@@ -8,7 +8,6 @@ def weak_label_distribution(df, label):
 
     print(f"Analyzing {label} distribution")
     
-
     # Show distribution
     counts = df[label].value_counts()
     print(counts)
@@ -16,7 +15,7 @@ def weak_label_distribution(df, label):
     plt.figure(figsize=(6, 6))
     plt.pie(counts, labels=counts.index, autopct='%1.1f%%', startangle=140)
     plt.title(f"Distribution of {label}")
-    plt.axis('equal')  # Equal aspect ratio ensures pie is drawn as a circle.
+    plt.axis('equal') 
     # Save figure
     plt.savefig(f"src/{label}_dist.png")
     plt.close()
