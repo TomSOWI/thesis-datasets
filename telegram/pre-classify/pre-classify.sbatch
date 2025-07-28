@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=gender
+#SBATCH --job-name=political_leaning
 #SBATCH --partition=gpu-a100
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=32
@@ -8,7 +8,7 @@
 #SBATCH --mail-type=FAIL
 #SBATCH --mail-type=END
 #SBATCH --mail-user=tomklotz@gmx.net
-#SBATCH --output=logs/%x-%j.log
+#SBATCH --output=telegram/pre-classify/logs/%x-%j.log
 
 
 # Load required modules
@@ -30,8 +30,10 @@ micromamba activate tk_ma
 # nvidia-smi
 
 # Run your script
-python gender.py
+#python gender.py
 #python hatespeech.py
 #python lexbias.py
 #python sentiment.py
+#python politicalness.py
+#python political_leaning.py
 

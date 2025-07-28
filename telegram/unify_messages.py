@@ -2,7 +2,7 @@ import html.entities
 import pandas as pd
 import re
 from tqdm import tqdm
-from src.utils import to_parquet
+from src.utils import to_parquet, ultimately_unescape
 from markdown_text_clean import clean_text
 from langdetect import detect, LangDetectException
 import html
@@ -64,7 +64,7 @@ def _unify_text(text):
     text = RE_PATTERNS["multi_space"].sub(" ", text)
     text = RE_PATTERNS["linebreak"].sub("", text)
     # Resolve broken HTML
-    text = html.unescape(text)
+    text = ultimately_unescape(text)
 
     return text.strip()
 

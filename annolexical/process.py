@@ -1,5 +1,5 @@
 import pandas as pd
-from transformers import AutoTokenizer, AutoModelForSequenceClassification
+from transformers import AutoTokenizer, AutoModelForSequenceClassification, pipeline
 import os
 import torch
 import pandas as pd
@@ -28,7 +28,8 @@ GENDER_MODEL = "bias-type-classifier"
 SENTI_MODEL = "twitter-roberta-base-sentiment-latest"
 HATE_MODEL = "bert-base-uncased-hatexplain"
 LEXBIAS_MODEL = "magpie-babe-ft-xlm"
-POLITIC_MODEL = ""
+POLITICALNESS_MODEL = "Political_DEBATE_large_v1.0"
+POLITICAL_LEANING_MODEL = "political-leaning-politics"
 
 # Enable faster matmul using TF32 on A100
 torch.set_float32_matmul_precision("high")
@@ -46,6 +47,16 @@ def load_model(model_id):
     )
     return model, tokenizer
 
+def zero_shot_classification(messages, model_id, device):
+    model_path = f"/scratch/usr/nimtsspi/models/{model_id}"
+    pipe = pipeline("zero-shot-classification", model=model_path, tokenizer=model_path, batch_size = BATCH_SIZE, device=device)
+    hypothesis_template = 'This text is {} about politics.'
+    labels = ["is not", "is"]
+    mapping = {"is not": "NOT POLITICAL", "is": "POLITICAL"}
+    results = pipe(messages, labels, hypothesis_template = hypothesis_template, multi_label = True)
+    print(f"Predictions using {model_id} has finished")
+    labels = [mapping[label['labels'][0]] for label in results]
+    return labels
 
 def multi_label_classification(messages, model_id, target_label, device):
     # Load tokenizer and model
@@ -137,6 +148,7 @@ def main():
 
     # Classify
     start = time.time()
+
     df["gender"] = multi_label_classification(
         sentences, model_id=GENDER_MODEL, target_label="gender", device=device
     )
@@ -149,6 +161,16 @@ def main():
     df["lexbias"] = single_label_classification(
         sentences, model_id=LEXBIAS_MODEL, device=device
     )
+    df["politicalness"] = zero_shot_classification(
+        sentences, model_id=POLITICALNESS_MODEL, device=device
+    )
+    # Political leaning with mapping
+    raw_labels = single_label_classification(
+        sentences, model_id=POLITICAL_LEANING_MODEL, device=device 
+    )
+    mapping = {"LABEL_0": "left", "LABEL_1": "center","LABEL_2": "right"}
+    df["political_leaning"] = [mapping[label] for label in raw_labels]
+
     end = time.time()
 
     # Log Runtime

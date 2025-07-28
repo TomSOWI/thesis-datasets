@@ -1,14 +1,14 @@
 #!/bin/bash
 #SBATCH --job-name=annolex-process
-#SBATCH --partition=gpu-a100:test
+#SBATCH --partition=gpu-a100
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=32
 #SBATCH --mem=200G
-#SBATCH --time=1:00:00
+#SBATCH --time=24:00:00
 #SBATCH --mail-type=FAIL
 #SBATCH --mail-type=END
 #SBATCH --mail-user=tomklotz@gmx.net
-#SBATCH --output=logs/%x-%j.log
+#SBATCH --output=annolexical/logs/%x-%j.log
 
 
 
@@ -33,5 +33,5 @@ micromamba activate tk_ma
 # Run your script
 #python download_annolex.py (requires internet)
 python process.py
-python explore.py
+#python explore.py
 
