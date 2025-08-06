@@ -1,4 +1,4 @@
-# 📦 TGDataset Creation
+# 📦 TG Dataset Creation
 
 ## 📥 How to Download the Data
 
@@ -54,13 +54,32 @@
 - **Filter for core topics only**  
   → Save as: `TG-core-topics`
 
+- **Pre-classify for weak labels** 
+  → Save as: `labels/TG-gender`
+  → Save as: `labels/TG-hate`
+  → Save as: `labels/TG-sentiment`
+  → Save as: `labels/TG-lexbias`
+
+- **Combine labels** 
+ Using pre-classify/summary.ipynb
+  → All topics: `TG-weak-label-all`
+  → Core topics: `TG-weak-label-core`
+
+- **Downsample based on weak labels tasks for each topic**  
+Using task_downsampling.ipynb
+  → Save as: `TG-weak-gender-core`
+  → Save as: `TG-weak-hate-core`
+  → Save as: `TG-weak-sentiment-core`
+  → Save as: `TG-weak-lexbias-core`
+
 
 ### Running order
 1. combine_batches.py (internet required for kaggle)
 2. explore_character_len.py
 3. unify_messages.py
 4. topic_filter.py
-
+5. pre-classify/pre-classify.sbatch
+6. task_downsampling.ipynb
 --> tg-preprocess.sbatch
 
 
