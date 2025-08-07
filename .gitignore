@@ -4,6 +4,9 @@
 # Ignore all medium large csv files
 *.csv
 
+# ZIP
+*.zip
+
 
 # Ignore cache
 __pycache__
