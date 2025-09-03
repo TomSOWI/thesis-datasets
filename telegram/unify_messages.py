@@ -4,21 +4,17 @@ import re
 from tqdm import tqdm
 from src.utils import to_parquet, ultimately_unescape
 from markdown_text_clean import clean_text
-from langdetect import detect, LangDetectException
 import html
 
 tqdm.pandas()
-
 html.escape
 
-INPUT_PATH = "/scratch/usr/nimtsspi/datasets/TG"
-OUTPUT_PATH = "/scratch/usr/nimtsspi/datasets/TG"
+#base_path = "/scratch/usr/nimtsspi"
+base_path = "/mnt/vast-kisski/projects/kisski_tegami"
+INPUT_PATH = f"{base_path}/datasets/TG"
+OUTPUT_PATH = f"{base_path}/datasets/TG"
 
 
-# https//t.me/nicekiddbot
-# https//:t.me/FreedomAmericanConvoy
-# https : // t . me/sineinjuria/ 51731
-# https.//t.me/BINARYKILLEER
 
 
 # Precompiled regex patterns
@@ -68,12 +64,6 @@ def _unify_text(text):
 
     return text.strip()
 
-
-def safe_detect(x):
-    try:
-        return detect(x)
-    except LangDetectException:
-        return "LangDetectError"
 
 
 @to_parquet(f"{OUTPUT_PATH}/TG_unified.parquet")

@@ -4,8 +4,11 @@ import seaborn as sns
 from tqdm import tqdm
 from src.utils import to_parquet
 
-INPUT_PATH = "/scratch/usr/nimtsspi/datasets/TG"
-OUTPUT_PATH = "/scratch/usr/nimtsspi/datasets/TG"
+
+#base_path = "/scratch/usr/nimtsspi"
+base_path = "/mnt/vast-kisski/projects/kisski_tegami"
+INPUT_PATH = f"{base_path}/datasets/TG"
+OUTPUT_PATH = f"{base_path}/datasets/TG"
 tqdm.pandas()
 
 

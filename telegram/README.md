@@ -75,10 +75,11 @@ Using task_downsampling.ipynb
 
 ### Running order
 1. combine_batches.py (internet required for kaggle)
-2. explore_character_len.py
+2. explore_message_len.py
 3. unify_messages.py
 4. topic_filter.py
-5. pre-classify/pre-classify.sbatch
+5. pre-classify/main.py
+5. pre-classify/summary.ipynb
 6. task_downsampling.ipynb
 --> tg-preprocess.sbatch
 

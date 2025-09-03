@@ -10,13 +10,16 @@ import kagglehub
 from kagglehub import KaggleDatasetAdapter
 import json
 
-INPUT_PATH = "/scratch/usr/nimtsspi/datasets/TG"
-OUTPUT_PATH = "/scratch/usr/nimtsspi/datasets/TG"
+#base_path = "/scratch/usr/nimtsspi"
+base_path = "/mnt/vast-kisski/projects/kisski_tegami"
+INPUT_PATH = f"{base_path}/datasets/TG"
+OUTPUT_PATH = f"{base_path}/datasets/TG"
 
 
 def download_from_kaggle():
     # Set this to where your kaggle.json is saved
-    kaggle_json_path = "/home/nimtsspi/thesis-datasets/telegram/src/kaggle.json"
+    #kaggle_json_path = "/home/nimtsspi/thesis-datasets/telegram/src/kaggle.json"
+    kaggle_json_path = "/user/spinde/u11191/thesis-datasets/telegram/src/kaggle.json"
 
     with open(kaggle_json_path) as f:
         creds = json.load(f)

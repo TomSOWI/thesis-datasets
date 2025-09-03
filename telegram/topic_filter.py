@@ -1,8 +1,9 @@
 import pandas as pd
 
-
-INPUT_PATH = "/scratch/usr/nimtsspi/datasets/TG"
-OUTPUT_PATH = "/scratch/usr/nimtsspi/datasets/TG"
+#base_path = "/scratch/usr/nimtsspi"
+base_path = "/mnt/vast-kisski/projects/kisski_tegami"
+INPUT_PATH = f"{base_path}/datasets/TG"
+OUTPUT_PATH = f"{base_path}/datasets/TG"
 
 df = pd.read_parquet(f"{INPUT_PATH}/TG_unified.parquet")
 relevant_topics = ['Religion','US news','Covid','World news','Extremists and radicals','Social']
