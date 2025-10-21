@@ -1,0 +1,2 @@
+This project contains the aggregation and processing of datasets used in **thesis-code**.
+Judge dataset's trainsets are processed such that they align well with the processing of the Telegram dataset. The goal is that demonstrations drawn from from the trainset are more similar to the target sentences from the Telegram dataset.

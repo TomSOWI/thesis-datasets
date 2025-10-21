@@ -3,6 +3,8 @@ import torch
 import pandas as pd
 import wandb
 import time
+import psutil
+import pyarrow.parquet as pq
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
 base_path = "/mnt/vast-kisski/projects/kisski_tegami"
@@ -18,59 +20,64 @@ def set_A100_precission():
     print("GPU Name:", torch.cuda.get_device_name(torch.cuda.current_device()))
 
 
-def wandb_init(
-    model: str,
-    task: str,
-    batch_size: int = 32,
-    dataset: str = "TG_unified.parquet",
-    max_length: int = 512,
-):
-    """
-    Initialize Weights & Biases run with configurable parameters.
-    """
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    wandb.init(
-        project=f"tg-preclassify-{task}-{model.split('/')[-1]}",
-        config = {
-        "batch_size": batch_size,
-        "model": model,
-        "dataset": dataset,
-        "task": task,
-        "max_length": max_length,
-        "device": device,
-        },
-    )
-    config = wandb.config
-    return config
+# def wandb_init(
+#     model: str,
+#     task: str,
+#     batch_size: int = 32,
+#     dataset: str = "TG_unified",
+#     max_length: int = 512,
+# ):
+#     """
+#     Initialize Weights & Biases run with configurable parameters.
+#     """
+#     device = "cuda" if torch.cuda.is_available() else "cpu"
+#     wandb.init(
+#         project=f"tg-preclassify-{task}-{model.split('/')[-1]}",
+#         config = {
+#         "batch_size": batch_size,
+#         "model": model,
+#         "dataset": dataset,
+#         "task": task,
+#         "max_length": max_length,
+#         "device": device,
+#         },
+#     )
+#     config = wandb.config
+#     return config
 
 
 def load_model(config):
-    tokenizer = AutoTokenizer.from_pretrained(config.model)
-    model = AutoModelForSequenceClassification.from_pretrained(config.model)
+    tokenizer = AutoTokenizer.from_pretrained(config["model"])
+    model = AutoModelForSequenceClassification.from_pretrained(config["model"])
+    # tokenizer = AutoTokenizer.from_pretrained(config.model)
+    # model = AutoModelForSequenceClassification.from_pretrained(config.model)
     return model, tokenizer
 
 
 def single_label_classification(messages, config):
     # Load tokenizer and model
     model, tokenizer = load_model(config)
-    model = model.to(config.device)
+    # model = model.to(config.device)
+    model = model.to(config["device"])
     model.eval()
 
     # id2label mapping
-    print("Available labels:", model.config.id2label)
+    #print("Available labels:", model.config.id2label)
     id2label = model.config.id2label
 
     predictions = []
 
-    for i in range(0, len(messages), config.batch_size):
-        batch_texts = messages[i : i + config.batch_size]
+    # for i in range(0, len(messages), config.batch_size):
+    #     batch_texts = messages[i : i + config.batch_size]
+    for i in range(0, len(messages), config["batch_size"]):
+        batch_texts = messages[i : i + config["batch_size"]]
         inputs = tokenizer(
             batch_texts,
             return_tensors="pt",
             padding=True,
             truncation=True,
-            max_length=config.max_length,
-        ).to(config.device)
+            max_length=config["max_length"],
+        ).to(config["device"]) ### change!!!!!!!!!!!!!!!!
 
         with torch.no_grad():
             logits = model(**inputs).logits
@@ -79,36 +86,77 @@ def single_label_classification(messages, config):
         predicted_classes = torch.argmax(probs, dim=1).tolist()
         predictions.extend([id2label[i] for i in predicted_classes])
 
-    print(f"Predictions using {config.model} have finished.")
+    print(f"Predictions using {config['model']} have finished.")
     return predictions
+
+def stream_parquet(path, batch_size=50_000):
+    """Stream parquet in row-grouped batches using pyarrow."""
+    parquet_file = pq.ParquetFile(path)
+    for batch in parquet_file.iter_batches(batch_size=batch_size):
+        yield batch.to_pandas()
 
 
 def main(model, task):
+    print("Memory usage (GB):", psutil.virtual_memory().used / 1e9)
 
-    config = wandb_init(
-        model=model,
-        task=task
-    )
+    # config = wandb_init(
+    #     model=model,
+    #     task=task
+    # )
+
+    config = {
+        "batch_size": 32,
+        "model": model,
+        "dataset": "TG_unified",
+        "task": task,
+        "max_length": 512,
+        "device": "cuda" if torch.cuda.is_available() else "cpu",
+       }
+     
+    print("Memory usage (GB):", psutil.virtual_memory().used / 1e9)
 
     # Enable faster matmul using TF32 on A100
-    set_A100_precission()
+    # set_A100_precission()
+    # parquet_path = f"{INPUT_PATH}/{config.dataset}.parquet"
+    # output_path = f"{OUTPUT_PATH}/TG_{config.task}.parquet"
+    parquet_path = f"{INPUT_PATH}/{config['dataset']}.parquet"
+    output_path = f"{OUTPUT_PATH}/TG_{config['task']}.parquet"
+    
 
-    # Load TG dataset
-    df = pd.read_parquet(f"{INPUT_PATH}/{config.dataset}.parquet")
-    messages = df.message.to_list()
-
-    # Run classification
     start = time.time()
-    df["hate"] = single_label_classification(messages, config)
+
+    # Process in streaming chunks
+    results = []
+    for i, chunk_df in enumerate(stream_parquet(parquet_path, batch_size=50_000)): #50_000
+        print(f"Processing chunk {i} with {len(chunk_df)} rows...")
+
+        messages = chunk_df.message.to_list()
+        chunk_df[task] = single_label_classification(messages, config)
+        results.append(chunk_df[["message_id", task]])
+
+    final_df = pd.concat(results, ignore_index=True)
+    final_df.to_parquet(output_path, engine="pyarrow", index=False, compression="snappy")
+
     end = time.time()
+    print("Saved results to:", output_path)
+    print("Runtime (minutes):", (end - start) / 60)
 
-    # Check predictions
-    print("Values:", df.hate.unique())
+    # # Load TG dataset
+    # df = pd.read_parquet(f"{INPUT_PATH}/{config.dataset}.parquet")[:1]
+    # messages = df.message.to_list()
 
-    # Save message_id + label
-    df = df[["message_id", "hate"]]
-    print("Saving final results")
-    df.to_parquet(f"{OUTPUT_PATH}/TG_{config.task}.parquet")
+    # # Run classification
+    # start = time.time()
+    # df[task] = single_label_classification(messages, config)
+    # end = time.time()
 
-    # Log runtime
-    print("Runtime (minutes):", (end - start) // 60)
+    # # Check predictions
+    # print("Values:", df[task].unique())
+
+    # # Save message_id + label
+    # df = df[["message_id", task]]
+    # print("Saving final results")
+    # df.to_parquet(f"{OUTPUT_PATH}/TG_{config.task}.parquet")
+
+    # # Log runtime
+    # print("Runtime (minutes):", (end - start) // 60)

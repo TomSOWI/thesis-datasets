@@ -50,7 +50,7 @@ def download_from_kaggle():
     df = pd.merge(df, topic_mapping, how="left", left_on="channel_id", right_on="ch_ID")
     df = df.drop("ch_ID", axis=1)
     # Enhance with message_id
-    df["message_id"] = [str(uuid.uuid4()) for _ in range(len(df))]
+    df["message_id"] = [i for i in range(len(df))]
     df.to_parquet(f"{OUTPUT_PATH}/TG_base.parquet")
 
 

@@ -1,10 +1,14 @@
 import html.entities
+import fasttext
 import pandas as pd
 import re
 from tqdm import tqdm
 from src.utils import to_parquet, ultimately_unescape
 from markdown_text_clean import clean_text
 import html
+
+from pandarallel import pandarallel
+pandarallel.initialize(progress_bar=True)
 
 tqdm.pandas()
 html.escape
@@ -64,14 +68,29 @@ def _unify_text(text):
 
     return text.strip()
 
+model = fasttext.load_model("/mnt/vast-kisski/projects/kisski_tegami/models/lid.176.bin")
+#texts = ["Hello world!", "Bonjour le monde!", "こんにちは世界"]
+
+def detect_language(text):
+    """
+    Detect language using fastText.
+    Returns ISO 639-1 code like 'en', 'fr', or 'unknown'.
+    """
+    if not text:
+        return "unknown"
+    text = text.replace("\n", " ").strip()
+    predictions, probs = model.predict(text, k=1)  # returns list of predictions
+    return predictions[0].replace("__label__", "")
+    #lang[0].replace("__label__", "")
 
 
-@to_parquet(f"{OUTPUT_PATH}/TG_unified.parquet")
+
+@to_parquet(f"{OUTPUT_PATH}/TG_unified2.parquet")
 def main():
     df = pd.read_parquet(f"{INPUT_PATH}/TG_280limit.parquet")
 
     # Apply text cleaning function to entire column
-    df["message"] = df["message"].progress_apply(_unify_text)
+    df["message"] = df["message"].parallel_apply(_unify_text)
 
     # Drop empty and NaN messages
     df = df[df["message"].notna() & (df["message"] != "")]
@@ -82,12 +101,14 @@ def main():
     print(f"N without duplicates: {len(df)}")
 
     # Lang Detect: Dropped tooo inaccurate
-    # df["language"] = df["message"].progress_apply(safe_detect)
-
+    df["language"] = df["message"].parallel_apply(detect_language)
+    df = df[df.language == "en"]
     # Remove sentences only containing non-english characters e.g. emojis, chineese characters
-    non_english = re.compile(r"^[^\x00-\x7F]+$")
-    df = df[~df.message.str.contains(non_english, regex=True)]
-    print(f"N without only foreign signed/emoji messages: {len(df)}")
+    #non_english = re.compile(r"^[^\x00-\x7F]+$")
+    # Regex to match sentences that contain only non-English characters, numbers, or punctuation
+    #non_english = re.compile(r"^[^\w\s]+$|^\d+$|^[^\x00-\x7F]+$")
+    #df = df[~df.message.str.contains(non_english, regex=True)]
+    print(f"Only english messages: {len(df)}")
 
     print(f"N unified messages: {len(df)}")
     return df
