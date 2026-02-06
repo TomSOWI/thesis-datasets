@@ -20,31 +20,6 @@ def set_A100_precission():
     print("GPU Name:", torch.cuda.get_device_name(torch.cuda.current_device()))
 
 
-# def wandb_init(
-#     model: str,
-#     task: str,
-#     batch_size: int = 32,
-#     dataset: str = "TG_unified",
-#     max_length: int = 512,
-# ):
-#     """
-#     Initialize Weights & Biases run with configurable parameters.
-#     """
-#     device = "cuda" if torch.cuda.is_available() else "cpu"
-#     wandb.init(
-#         project=f"tg-preclassify-{task}-{model.split('/')[-1]}",
-#         config = {
-#         "batch_size": batch_size,
-#         "model": model,
-#         "dataset": dataset,
-#         "task": task,
-#         "max_length": max_length,
-#         "device": device,
-#         },
-#     )
-#     config = wandb.config
-#     return config
-
 
 def load_model(config):
     tokenizer = AutoTokenizer.from_pretrained(config["model"])
@@ -141,22 +116,4 @@ def main(model, task):
     print("Saved results to:", output_path)
     print("Runtime (minutes):", (end - start) / 60)
 
-    # # Load TG dataset
-    # df = pd.read_parquet(f"{INPUT_PATH}/{config.dataset}.parquet")[:1]
-    # messages = df.message.to_list()
 
-    # # Run classification
-    # start = time.time()
-    # df[task] = single_label_classification(messages, config)
-    # end = time.time()
-
-    # # Check predictions
-    # print("Values:", df[task].unique())
-
-    # # Save message_id + label
-    # df = df[["message_id", task]]
-    # print("Saving final results")
-    # df.to_parquet(f"{OUTPUT_PATH}/TG_{config.task}.parquet")
-
-    # # Log runtime
-    # print("Runtime (minutes):", (end - start) // 60)

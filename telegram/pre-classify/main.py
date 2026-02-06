@@ -7,9 +7,6 @@ from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import psutil
 
 
-# INPUT_PATH = "/scratch/usr/nimtsspi/datasets/TG"
-# OUTPUT_PATH = "/scratch/usr/nimtsspi/datasets/TG/labels"
-
 BASE_PATH = "/mnt/vast-kisski/projects/kisski_tegami"
 INPUT_PATH = f"{BASE_PATH}/datasets/TG"
 OUTPUT_PATH = f"{BASE_PATH}/datasets/TG/labels"
@@ -32,12 +29,6 @@ BATCH_SIZE = config.batch_size
 MODEL = config.model #"mediabiasgroup/magpie-babe-ft"
 MAX_LENGTH = config.max_length
 TASK = config.task
-
-# Enable faster matmul using TF32 on A100
-# torch.set_float32_matmul_precision("high")
-# print("Current GPU:", torch.cuda.current_device())
-# print("Available GPUs:", torch.cuda.device_count())
-# print("GPU Name:", torch.cuda.get_device_name(torch.cuda.current_device()))
 
 
 def load_model(model_id):

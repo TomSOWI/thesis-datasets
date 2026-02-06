@@ -1,8 +1,6 @@
 import pandas as pd
 from tqdm import tqdm
-import re
-from src.utils import to_parquet, investigate_patterns
-from markdown_text_clean import clean_text
+from src.utils import investigate_patterns
 from tqdm import tqdm
 
 
